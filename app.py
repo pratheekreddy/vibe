@@ -445,6 +445,7 @@ def signal_api():
     if request.method == "POST":
         audio=request.data.audio
         audioAccuracy=visualize(audio)
+        print(audioAccuracy)
         data = np.array(json.loads(request.data.fullRecording.decode("utf-8"))["data"])
         # np.savetxt('raw_data', data, delimiter=",")
         codeAccuracy = process_signal(data)
