@@ -9,9 +9,13 @@ import pandas as pd
 import statistics
 from scipy.signal import find_peaks, spectrogram
 from flask_cors import CORS
+from flask_socketio import SocketIO, send
 import wave
+import json
 
 app = Flask(__name__)
+socketio = SocketIO(app)
+# cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
 print("Initializing Server...")
@@ -70,16 +74,16 @@ def accuracy(true_code,two_fa):
     percentCorrect = round(((totalHexBits - distance) / totalHexBits) * 100, 4)
     return percentCorrect
 
-def visualize(file):
-    
-    raw = wave.open(file)
+def visualize(audio):
+
+    # raw = audi
 
     mapping={0:'0',1:'1',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'A',11:'B',12:'C',13:'D',14:'E',15:'F'}
     
-    signal = raw.readframes(-1)
-    signal = np.frombuffer(signal, dtype ="int16")
-    f_rate = raw.getframerate()
-    frames = raw.getnframes()
+    # signal = raw.readframes(-1)
+    signal = list(audio["signal"].values())
+    f_rate = audio["frames"]
+    frames = audio["f_rate"]
     duration = frames / float(f_rate)
     print(duration)
     two_fa=''
@@ -126,7 +130,13 @@ def visualize(file):
     a=closest(code[len(code)-1]-last)
     two_fa=two_fa+mapping[a]
     print(two_fa)
-    return (accuracy(trueCode,two_fa))
+    file1 = open("sample.txt", "a")
+    
+    acc=accuracy(trueCode,two_fa)
+    l='\n'+trueCode+'    '+two_fa+'    '+str(acc)+'\n'
+    file1.write(l)
+    file1.close()
+    return (acc)
 
 """
     END OF AUDIO CODE
@@ -430,7 +440,7 @@ def login():
     # return render_template("login.html", error=error)
 
 # recives vibration and audio input
-@app.route("/signal_api", methods=["GET", "POST"])
+@app.route("/signal_api", methods=["GET", "POST","OPTIONS"])
 def signal_api():
     global collectionTimeStamp
     global authenticated
@@ -442,15 +452,17 @@ def signal_api():
             {"collectionTimeStamp": collectionTimeStamp})
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:6060')
         return response
+        
     if request.method == "POST":
-        audio=request.data.audio
-        audioAccuracy=visualize(audio)
-        print(audioAccuracy)
-        data = np.array(json.loads(request.data.fullRecording.decode("utf-8"))["data"])
-        # np.savetxt('raw_data', data, delimiter=",")
-        codeAccuracy = process_signal(data)
+        audio=request.data.decode("utf-8")
+        y = json.loads(audio)
+        audioAccuracy=visualize(y)
         # time.sleep(5)
-        if codeAccuracy >= 75.00 or audioAccuracy>=75:
+        print(audioAccuracy)
+        #
+
+        #
+        if audioAccuracy>=75:
             print("We're in")
             authenticated = True
             # return redirect(u0rl_for("welcome"))
@@ -458,10 +470,7 @@ def signal_api():
             print("Not accepted")
             authenticated = False
         response = jsonify({"real": trueCode, "authenticated": authenticated})
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:6060')
-        # print(process_signal(data))
-        # print(code)
-        # print(incomingCode)
+        response.headers.add('Access-Control-Allow-Origin', '*')
         collectionTimeStamp = ""
         return response
 
@@ -469,7 +478,7 @@ def signal_api():
 
 
 if __name__ == '__main__':
-    app.run()
+    socketio.run(app)
 
 
 hex_table_setter()
