@@ -105,11 +105,35 @@ def visualize(audio):
 
     positive=final>0
     po=final[positive]
-    pavg=np.average(po)*1.7
-    navg=-0.8*pavg
-
+    pavg=np.average(po)*1
+    navg=pavg
+    #------
+    acc=repeat(final,pavg,navg,time)
+    best=acc
+    x=0
+    while x<4:
+        x+=1
+        if(acc==0):
+            pavg=pavg+pavg*0.3
+            acc=repeat(final,pavg,navg,time)
+        elif(acc>best):
+            
+            pavg=pavg+pavg*0.2
+            acc=repeat(final,pavg,navg,time)
+            best=acc
+        else:
+            pavg=pavg+pavg*0.2
+            acc=repeat(final,pavg,navg,time)
+    file1 = open("sample.txt", "a")
+    file1.write(str(best))
+    file1.close()
+    return best
     #------------------
+
+def repeat(final,pavg,navg,time):
     code=[]
+    two_fa=''
+    mapping={0:'0',1:'1',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'A',11:'B',12:'C',13:'D',14:'E',15:'F'}
 
     for x in range(0,len(final),1):
         if(final[x]>pavg):
