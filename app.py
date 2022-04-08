@@ -12,6 +12,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, send
 import wave
 import json
+import nussl
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -84,6 +85,9 @@ def visualize(audio):
     signal = list(audio["signal"].values())
     f_rate = audio["frames"]
     frames = audio["f_rate"]
+    nuss=nussl.AudioSignal(audio_data_array=signal,sample_rate=48000)
+    jamming=nussl.AudioSignal(path_to_input_file='./jamming.wav')
+    signal=nuss.subtract(jamming)
     duration = frames / float(f_rate)
     print(duration)
     two_fa=''
